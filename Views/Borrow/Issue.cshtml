@@ -1,0 +1,148 @@
+﻿@model LibraryManagementSystem.Models.BorrowRecord
+
+<div class="container d-flex justify-content-center align-items-center vh-100">
+
+    <div class="card shadow-lg p-4"
+         style="width: 450px; border-radius: 15px;">
+
+        <h3 class="text-center mb-3">
+            📚 Issue Book
+        </h3>
+
+        <!-- SUCCESS MESSAGE -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                @TempData["Success"]
+            </div>
+        }
+
+        <!-- ERROR MESSAGE -->
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["Error"]
+            </div>
+        }
+
+        <form asp-action="Issue" method="post">
+
+            @Html.AntiForgeryToken()
+
+            <!-- Validation -->
+            <div asp-validation-summary="All"
+                 class="text-danger mb-2">
+            </div>
+
+            <!-- SELECT BOOK -->
+            <div class="mb-3">
+
+                <label class="form-label fw-bold">
+                    Select Book
+                </label>
+
+                <select asp-for="BookId"
+                        class="form-select"
+                        asp-items="ViewBag.Books">
+
+                    <option value="">
+                        -- Select Book --
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="BookId"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+            <!-- SELECT MEMBER -->
+            <div class="mb-3">
+
+                <label class="form-label fw-bold">
+                    Select Member
+                </label>
+
+                <select asp-for="MemberId"
+                        class="form-select"
+                        asp-items="ViewBag.Members">
+
+                    <option value="">
+                        -- Select Member --
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="MemberId"
+                      class="text-danger">
+                </span>
+
+                <!-- MEMBERSHIP INFO -->
+                <small class="text-muted">
+                    Only members with active membership can borrow books.
+                </small>
+
+                <!-- MEMBERSHIP BUTTON -->
+                <div class="mt-2">
+
+                    <a asp-controller="Membership"
+                       asp-action="Create"
+                       class="btn btn-sm btn-primary">
+
+                        + Take Membership
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            <!-- DUE DATE -->
+            <div class="mb-3">
+
+                <label class="form-label fw-bold">
+                    Due Date
+                </label>
+
+                <input asp-for="DueDate"
+                       type="date"
+                       class="form-control"
+                       value="@DateTime.Now.AddDays(7).ToString("yyyy-MM-dd")" />
+
+                <span asp-validation-for="DueDate"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+            <!--ISSUE BUTTON -->
+            <button type="submit"
+                    class="btn btn-success w-100">
+
+                <i class="bi bi-check-circle"></i>
+                Issue Book
+
+            </button>
+
+            <!-- BACK -->
+            <div class="text-center mt-3">
+
+                <a asp-action="Index"
+                   class="text-decoration-none">
+
+                    ⬅ Back to Borrow List
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

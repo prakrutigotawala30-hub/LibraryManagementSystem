@@ -1,0 +1,106 @@
+body {
+    background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    color:darkslategray;
+}
+
+/* ===== NAVBAR ===== */
+.custom-navbar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin: 10px;
+    padding: 10px 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+/* LOGO */
+.navbar-brand {
+    color: #333 !important;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+/* NAV LINKS */
+.nav-link {
+    color: #555 !important;
+    margin-left: 15px;
+    position: relative;
+    transition: 0.3s;
+}
+
+    /* HOVER EFFECT */
+    .nav-link:hover {
+        color: #000 !important;
+    }
+
+    /* ACTIVE LINK UNDERLINE */
+    .nav-link::after {
+        content: "";
+        display: block;
+        width: 0%;
+        height: 2px;
+        background: #667eea;
+        transition: 0.3s;
+        margin-top: 2px;
+    }
+
+    .nav-link:hover::after {
+        width: 100%;
+    }
+
+.dashboard-card {
+    padding: 25px;
+    border-radius: 10px;
+    color: white;
+    text-align: left;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: 0.3s;
+}
+
+    .dashboard-card h2 {
+        font-size: 32px;
+        margin: 0;
+    }
+
+    .dashboard-card p {
+        margin: 5px 0 0;
+        font-size: 16px;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+
+/* COLORS */
+.bg-blue {
+    background: #1e6bd6;
+}
+
+.bg-green {
+    background: #1f8b4c;
+}
+
+.bg-indigo {
+    background: #2563eb;
+}
+
+.bg-yellow {
+    background: #f4b400;
+    color: #000;
+}
+
+.bg-red {
+    background: #e53935;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

@@ -1,0 +1,71 @@
+﻿@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "_Layout"; // IMPORTANT: keep layout
+}
+
+<style>
+    /* Blur entire background */
+    .blur-bg {
+        position: fixed;
+        inset: 0;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        background: rgba(0, 0, 0, 0.15); 
+
+        z-index: 999;
+    }
+
+    .navbar {
+        position: relative;
+        z-index: 1100; 
+    }
+
+    /* Center card */
+    .access-card {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 380px;
+        background: rgba(255, 255, 255, 0.1);
+        color:darkslategray;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.15);
+        z-index: 1000;
+    }
+
+        .access-card h2 {
+            color:firebrick;
+        }
+
+    .btn-custom {
+        background: rgba(0,0,0,0.7);
+        border: none;
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+        .btn-custom:hover {
+            background: black;
+        }
+</style>
+
+<!-- BLUR LAYER -->
+<div class="blur-bg"></div>
+
+<!-- POPUP CARD -->
+<div class="access-card">
+    <h2>🚫 Access Denied</h2>
+
+    <p>You do not have permission to access this page.</p>
+
+    <a asp-controller="Home" asp-action="Index"
+       class="btn btn-custom mt-3 w-100">
+        ⬅ Back to Dashboard
+    </a>
+</div>

@@ -1,0 +1,78 @@
+﻿@model IEnumerable<LibraryManagementSystem.Models.Member>
+
+<div class="container mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>👥 Members List</h3>
+
+        <a asp-action="Create" class="btn btn-primary">
+            + Add Member
+        </a>
+    </div>
+
+    <!-- Search -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" id="searchBox" class="form-control"
+                   placeholder="Search by name, email or phone..." />
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card p-3">
+        <table class="table table-hover" id="membersTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var m in Model)
+                {
+                    <tr>
+                        <td>@m.Name</td>
+                        <td>@m.Email</td>
+                        <td>@m.Phone</td>
+                        <td>@m.JoinedOn.ToShortDateString()</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@m.Id"
+                               class="btn btn-sm btn-primary">View</a>
+
+                            <a asp-action="Edit" asp-route-id="@m.Id"
+                               class="btn btn-sm btn-warning">Edit</a>
+
+                            <a asp-action="Delete" asp-route-id="@m.Id"
+                               class="btn btn-sm btn-danger">Delete</a>
+
+                            <a asp-controller="Borrow"
+                               asp-action="History"
+                               asp-route-memberId="@m.Id"
+                               class="btn btn-sm btn-info">
+                                History
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ✅ SEARCH SCRIPT -->
+<script>
+    document.getElementById("searchBox").addEventListener("keyup", function () {
+        let value = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#membersTable tbody tr");
+
+        rows.forEach(row => {
+            let text = row.innerText.toLowerCase();
+            row.style.display = text.includes(value) ? "" : "none";
+        });
+    });
+</script>
