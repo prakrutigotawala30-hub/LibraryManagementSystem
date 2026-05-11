@@ -50,6 +50,22 @@
                     <span asp-validation-for="CategoryId" class="text-danger"></span>
                 </div>
 
+                <!-- Department -->
+                <div class="mb-3">
+                    <label asp-for="DepartmentId">Department</label>
+
+                    <select asp-for="DepartmentId"
+                            class="form-select"
+                            asp-items="ViewBag.DepartmentList">
+
+                        <option value="">-- Select Department --</option>
+
+                    </select>
+
+                    <span asp-validation-for="DepartmentId"
+                          class="text-danger"></span>
+                </div>
+
                 <!-- Total Copies -->
                 <div class="mb-3">
                     <label asp-for="TotalCopies"></label>
@@ -61,6 +77,13 @@
                 <div class="mb-3">
                     <label asp-for="AvailableCopies"></label>
                     <input asp-for="AvailableCopies" class="form-control" id="AvailableCopies" readonly />
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="IsFeatured" class="form-check-input" />
+                    <label asp-for="IsFeatured" class="form-check-label">
+                        Editor's Pick
+                    </label>
                 </div>
 
                 <!-- Buttons -->

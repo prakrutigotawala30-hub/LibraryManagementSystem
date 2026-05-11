@@ -4,9 +4,11 @@ using LibraryManagementSystem.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LibraryManagementSystem.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class HomeController : Controller
     {
         private readonly AppDbContext context;
@@ -39,10 +41,57 @@ namespace LibraryManagementSystem.Controllers
                 .Include(b => b.Book)
                 .Include(b => b.Member)
                 .OrderByDescending(b => b.IssuedOn)
-                .Take(5)
+                .Take(3)
                 .ToListAsync();
 
             ViewBag.RecentBorrows = recentBorrows;
+
+            ViewBag.FeaturedBooks = await context.Books
+                .Where(b => b.IsFeatured)
+                .Take(3)
+                .ToListAsync();
+            // BORROW CHART DATA
+
+            var last7Days = Enumerable.Range(0, 7)
+                .Select(i => DateTime.Now.Date.AddDays(-6 + i))
+                .ToList();
+
+            ViewBag.BorrowLabels = last7Days
+                .Select(d => d.ToString("ddd"))
+                .ToList();
+
+            ViewBag.BorrowData = last7Days
+                .Select(day => context.BorrowRecords
+                    .Count(x => x.IssuedOn.Date == day))
+                .ToList();
+
+            // CATEGORY CHART DATA
+
+            ViewBag.CategoryLabels = await context.Books
+                .Include(x => x.Category)
+                .GroupBy(x => x.Category!.Name)
+                .Select(g => g.Key)
+                .ToListAsync();
+
+            ViewBag.CategoryData = await context.Books
+                .Include(x => x.Category)
+                .GroupBy(x => x.Category!.Name)
+                .Select(g => g.Count())
+                .ToListAsync();
+
+            // FINE CHART DATA
+
+            var months = Enumerable.Range(1, 12).ToList();
+
+            ViewBag.FineLabels = months
+                .Select(m => new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"))
+                .ToList();
+
+            ViewBag.FineData = months
+                .Select(month => context.BorrowRecords
+                    .Where(x => x.IssuedOn.Month == month)
+                    .Sum(x => (decimal?)x.FineAmount) ?? 0)
+                .ToList();
 
             return View(model);
         }
@@ -63,6 +112,16 @@ namespace LibraryManagementSystem.Controllers
         public IActionResult Contact()
         {
             return View();
+        }
+
+        public IActionResult Error404()
+        {
+            return View("~/Views/Shared/Error404.cshtml");
+        }
+
+        public IActionResult Error500()
+        {
+            return View("~/Views/Shared/Error500.cshtml");
         }
     }
 }

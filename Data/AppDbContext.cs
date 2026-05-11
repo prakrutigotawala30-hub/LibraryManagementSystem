@@ -20,6 +20,7 @@ namespace LibraryManagementSystem.Data
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
         public DbSet<Membership> Memberships { get; set; }
+        public DbSet<Department> Departments { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

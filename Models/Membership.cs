@@ -19,12 +19,13 @@ namespace LibraryManagementSystem.Models
         [Required]
         public int DurationMonths { get; set; }
 
+        [Required]
         public DateTime StartDate { get; set; } = DateTime.Now;
-
+        [Required]
         public DateTime EndDate { get; set; }
-
+        
         public bool IsActive { get; set; } = true;
-
+        [Required]
         public decimal Fee { get; set; }
     }
 }

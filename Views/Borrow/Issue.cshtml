@@ -2,140 +2,86 @@
 
 <div class="container d-flex justify-content-center align-items-center vh-100">
 
-    <div class="card shadow-lg p-4"
-         style="width: 450px; border-radius: 15px;">
+    <div class="card shadow-lg p-4" style="width: 450px; border-radius: 15px;">
 
-        <h3 class="text-center mb-3">
-            📚 Issue Book
-        </h3>
+        <h3 class="text-center mb-3">📚 Issue Book</h3>
 
-        <!-- SUCCESS MESSAGE -->
         @if (TempData["Success"] != null)
         {
-            <div class="alert alert-success">
-                @TempData["Success"]
-            </div>
+            <div class="alert alert-success">@TempData["Success"]</div>
         }
 
-        <!-- ERROR MESSAGE -->
         @if (TempData["Error"] != null)
         {
-            <div class="alert alert-danger">
-                @TempData["Error"]
-            </div>
+            <div class="alert alert-danger">@TempData["Error"]</div>
         }
 
         <form asp-action="Issue" method="post">
-
             @Html.AntiForgeryToken()
 
-            <!-- Validation -->
-            <div asp-validation-summary="All"
-                 class="text-danger mb-2">
-            </div>
-
-            <!-- SELECT BOOK -->
+            <!-- BOOK -->
             <div class="mb-3">
-
-                <label class="form-label fw-bold">
-                    Select Book
-                </label>
+                <label class="form-label fw-bold">Select Book</label>
 
                 <select asp-for="BookId"
                         class="form-select"
                         asp-items="ViewBag.Books">
-
-                    <option value="">
-                        -- Select Book --
-                    </option>
-
+                    <option value="">-- Select Book --</option>
                 </select>
-
-                <span asp-validation-for="BookId"
-                      class="text-danger">
-                </span>
-
             </div>
 
-            <!-- SELECT MEMBER -->
+            <!-- MEMBER -->
             <div class="mb-3">
-
-                <label class="form-label fw-bold">
-                    Select Member
-                </label>
+                <label class="form-label fw-bold">Select Member</label>
 
                 <select asp-for="MemberId"
                         class="form-select"
-                        asp-items="ViewBag.Members">
+                        asp-items="ViewBag.Members"
+                        id="memberSelect">
+                    <option value="">-- Select Member --</option>
+                </select>
+            </div>
 
-                    <option value="">
-                        -- Select Member --
-                    </option>
+            <!-- TAKE MEMBERSHIP BUTTON (ONLY FOR NON-MEMBER) -->
+            <div id="takeMembershipBox" class="d-none mb-3">
+                <a asp-controller="Membership"
+                   asp-action="Create"
+                   class="btn btn-sm btn-primary">
+                    + Take Membership
+                </a>
+            </div>
+
+            <!-- MEMBERSHIP INFO (ONLY FOR MEMBER WITH MEMBERSHIP) -->
+            <div class="mb-3 d-none" id="membershipBox">
+
+                <label class="form-label fw-bold">Membership Details</label>
+
+                <input type="text"
+                       id="membershipInfo"
+                       class="form-control"
+                       readonly />
+            </div>
+
+            <!-- BORROW DURATION (ONLY FOR NON MEMBERSHIP) -->
+            <div class="mb-3 d-none" id="borrowBox">
+
+                <label class="form-label fw-bold">Borrow Duration</label>
+
+                <select name="borrowDays" class="form-select">
+
+                    <option value="3">3 Days</option>
+                    <option value="7">7 Days</option>
+                    <option value="15">15 Days</option>
+                    <option value="30">1 Month</option>
 
                 </select>
 
-                <span asp-validation-for="MemberId"
-                      class="text-danger">
-                </span>
-
-                <!-- MEMBERSHIP INFO -->
-                <small class="text-muted">
-                    Only members with active membership can borrow books.
-                </small>
-
-                <!-- MEMBERSHIP BUTTON -->
-                <div class="mt-2">
-
-                    <a asp-controller="Membership"
-                       asp-action="Create"
-                       class="btn btn-sm btn-primary">
-
-                        + Take Membership
-
-                    </a>
-
-                </div>
-
             </div>
 
-            <!-- DUE DATE -->
-            <div class="mb-3">
-
-                <label class="form-label fw-bold">
-                    Due Date
-                </label>
-
-                <input asp-for="DueDate"
-                       type="date"
-                       class="form-control"
-                       value="@DateTime.Now.AddDays(7).ToString("yyyy-MM-dd")" />
-
-                <span asp-validation-for="DueDate"
-                      class="text-danger">
-                </span>
-
-            </div>
-
-            <!--ISSUE BUTTON -->
-            <button type="submit"
-                    class="btn btn-success w-100">
-
-                <i class="bi bi-check-circle"></i>
+            <!-- ISSUE BUTTON -->
+            <button type="submit" class="btn btn-success w-100">
                 Issue Book
-
             </button>
-
-            <!-- BACK -->
-            <div class="text-center mt-3">
-
-                <a asp-action="Index"
-                   class="text-decoration-none">
-
-                    ⬅ Back to Borrow List
-
-                </a>
-
-            </div>
 
         </form>
 
@@ -144,5 +90,56 @@
 </div>
 
 @section Scripts {
+
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.getElementById("memberSelect").addEventListener("change", function () {
+
+            let memberId = this.value;
+
+            let membershipBox = document.getElementById("membershipBox");
+            let borrowBox = document.getElementById("borrowBox");
+            let takeBox = document.getElementById("takeMembershipBox");
+            let input = document.getElementById("membershipInfo");
+
+            if (!memberId) {
+                membershipBox.classList.add("d-none");
+                borrowBox.classList.add("d-none");
+                takeBox.classList.add("d-none");
+                input.value = "";
+                return;
+            }
+
+            fetch('/Borrow/GetMemberMembership?memberId=' + memberId)
+                .then(res => res.json())
+                .then(data => {
+
+                    if (data.hasMembership) {
+
+                        // SHOW ONLY MEMBERSHIP INFO
+                        membershipBox.classList.remove("d-none");
+                        borrowBox.classList.add("d-none");
+                        takeBox.classList.add("d-none");
+
+                        input.value =
+                            "Active Membership - " +
+                            data.durationMonths + " Months (Ends: " +
+                            data.endDate + ")";
+
+                    } else {
+
+                        // SHOW BORROW + TAKE MEMBERSHIP
+                        membershipBox.classList.add("d-none");
+                        borrowBox.classList.remove("d-none");
+                        takeBox.classList.remove("d-none");
+
+                        input.value = "";
+                    }
+
+                });
+
+        });
+    </script>
+
 }

@@ -1,7 +1,7 @@
-﻿using LibraryManagementSystem.ViewModels;
+﻿using LibraryManagementSystem.Models;
+using LibraryManagementSystem.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using LibraryManagementSystem.Models;
 
 namespace LibraryManagementSystem.Controllers
 {
@@ -10,6 +10,7 @@ namespace LibraryManagementSystem.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
 
+        private const string ADMIN_KEY = "LIBRARY@2026";
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager)
@@ -18,13 +19,9 @@ namespace LibraryManagementSystem.Controllers
             _signInManager = signInManager;
         }
 
-        // ================= LOGIN =================
-
+        // LOGIN
         [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
+        public IActionResult Login() => View();
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -35,26 +32,36 @@ namespace LibraryManagementSystem.Controllers
             var result = await _signInManager.PasswordSignInAsync(
                 model.Email,
                 model.Password,
-                false,  
-                false    
-            );
+                false,
+                false);
 
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                var user = await _userManager.FindByEmailAsync(model.Email);
+
+                // 👇 ADMIN
+                if (await _userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // 👇 USER
+                if (await _userManager.IsInRoleAsync(user, "User"))
+                {
+                    return RedirectToAction("Index", "UserView");
+                }
+
+                await _signInManager.SignOutAsync();
+                return RedirectToAction("AccessDenied");
             }
 
             ModelState.AddModelError("", "Invalid login attempt");
             return View(model);
         }
 
-        // ================= REGISTER =================
-
+        // REGISTER
         [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        public IActionResult Register() => View();
 
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model)
@@ -73,24 +80,41 @@ namespace LibraryManagementSystem.Controllers
 
             if (result.Succeeded)
             {
-                TempData["Success"] = "Registration successful! Please login.";
-                return RedirectToAction("Login", "Account");
+                // 👇 ADMIN CHECK LOGIC
+                if (model.IsAdmin)
+                {
+                    if (model.PrivateKey == ADMIN_KEY)
+                    {
+                        await _userManager.AddToRoleAsync(user, "Admin");
+                    }
+                    else
+                    {
+                        // delete user if key wrong
+                        await _userManager.DeleteAsync(user);
+
+                        TempData["Error"] = "Invalid Admin Key!";
+                        return View(model);
+                    }
+                }
+                else
+                {
+                    await _userManager.AddToRoleAsync(user, "User");
+                }
+
+                return RedirectToAction("Login");
             }
 
             foreach (var error in result.Errors)
-            {
                 ModelState.AddModelError("", error.Description);
-            }
 
             return View(model);
         }
 
-        // ================= LOGOUT =================
-
+        // LOGOUT
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login");
         }
 
         // ACCESS DENIED

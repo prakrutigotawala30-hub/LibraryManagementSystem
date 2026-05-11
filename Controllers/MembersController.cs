@@ -1,5 +1,6 @@
 ﻿using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
+using LibraryManagementSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace LibraryManagementSystem.Controllers
     public class MembersController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly ExportService _exportService;
 
-        public MembersController(AppDbContext context)
+        public MembersController(AppDbContext context, ExportService exportService)
         {
             _context = context;
+            _exportService = exportService;
         }
         public async Task<IActionResult> Index()
         {
@@ -141,6 +144,16 @@ namespace LibraryManagementSystem.Controllers
         private bool MemberExists(int id)
         {
             return _context.Members.Any(e => e.Id == id);
+        }
+        public IActionResult ExportExcel()
+        {
+            var members = _context.Members.ToList();
+
+            var file = _exportService.ExportMembers(members);
+
+            return File(file,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Members.xlsx");
         }
 
     }

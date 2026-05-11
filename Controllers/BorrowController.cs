@@ -3,28 +3,37 @@ using LibraryManagementSystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using LibraryManagementSystem.Services;
 
 namespace LibraryManagementSystem.Controllers
 {
     public class BorrowController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly PdfReceiptService _pdfService;
+        private readonly ExportService _exportService;
 
-        public BorrowController(AppDbContext context)
+        public BorrowController(AppDbContext context, PdfReceiptService pdfService, ExportService exportService)
         {
             _context = context;
+            _pdfService = pdfService;
+            _exportService = exportService;
         }
-
         // ================= INDEX =================
+
         public async Task<IActionResult> Index()
         {
             var records = await _context.BorrowRecords
-                .AsNoTracking()
                 .Include(b => b.Book)
                 .Include(b => b.Member)
                 .OrderByDescending(b => b.IssuedOn)
                 .Take(50)
                 .ToListAsync();
+
+            foreach (var r in records)
+            {
+                CalculateFine(r); 
+            }
 
             return View(records);
         }
@@ -33,26 +42,26 @@ namespace LibraryManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Issue()
         {
-            // BOOKS
             ViewBag.Books = new SelectList(
                 await _context.Books.ToListAsync(),
                 "Id",
                 "Title"
             );
 
-            // ONLY MEMBERS WITH ACTIVE MEMBERSHIP
-            var activeMembers = await _context.Members
-                .Where(m => _context.Memberships.Any(ms =>
-                    ms.MemberId == m.Id &&
-                    ms.IsActive &&
-                    ms.EndDate > DateTime.Now))
-                .ToListAsync();
-
             ViewBag.Members = new SelectList(
-                activeMembers,
+                await _context.Members.ToListAsync(),
                 "Id",
                 "Name"
             );
+
+            // NEW: Borrow Duration Options
+            ViewBag.Durations = new List<SelectListItem>
+    {
+        new SelectListItem { Text = "3 Days", Value = "3" },
+        new SelectListItem { Text = "7 Days", Value = "7" },
+        new SelectListItem { Text = "15 Days", Value = "15" },
+        new SelectListItem { Text = "1 Month", Value = "30" }
+    };
 
             return View();
         }
@@ -60,102 +69,45 @@ namespace LibraryManagementSystem.Controllers
         // ================= ISSUE POST =================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Issue(BorrowRecord Record)
+        public async Task<IActionResult> Issue(BorrowRecord Record, int borrowDays)
         {
-            if (ModelState.IsValid)
+            var book = await _context.Books.FindAsync(Record.BookId);
+
+            if (book == null)
             {
-                // CHECK MEMBERSHIP
-                var membership = await _context.Memberships
-                    .FirstOrDefaultAsync(m =>
-                        m.MemberId == Record.MemberId &&
-                        m.IsActive);
-
-                // NO MEMBERSHIP
-                if (membership == null)
-                {
-                    TempData["Error"] =
-                        "❌ Membership required before issuing books.";
-
-                    return RedirectToAction(nameof(Issue));
-                }
-
-                // MEMBERSHIP EXPIRED
-                if (membership.EndDate < DateTime.Now)
-                {
-                    TempData["Error"] =
-                        "❌ Membership expired. Renew membership first.";
-
-                    return RedirectToAction(nameof(Issue));
-                }
-
-                // CHECK BOOK
-                var book = await _context.Books
-                    .FirstOrDefaultAsync(b => b.Id == Record.BookId);
-
-                if (book == null)
-                {
-                    TempData["Error"] = "Book not found.";
-                    return RedirectToAction(nameof(Issue));
-                }
-
-                // CHECK AVAILABLE QUANTITY
-                if (book.AvailableCopies <= 0)
-                {
-                    TempData["Error"] =
-                        "❌ Book not available in stock.";
-
-                    return RedirectToAction(nameof(Issue));
-                }
-
-                // ISSUE BOOK
-                Record.IssuedOn = DateTime.Now;
-
-                if (Record.DueDate == DateTime.MinValue)
-                {
-                    Record.DueDate = DateTime.Now.AddDays(7);
-                }
-
-                Record.Status = "Issued";
-                Record.FineAmount = 0;
-
-                // REDUCE STOCK
-                book.AvailableCopies -= 1;
-
-                _context.BorrowRecords.Add(Record);
-
-                _context.Update(book);
-
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] =
-                    "✅ Book issued successfully!";
-
-                return RedirectToAction(nameof(Index));
+                TempData["Error"] = "Book not found.";
+                return RedirectToAction(nameof(Issue));
             }
 
-            // RELOAD DROPDOWNS
-            ViewBag.Books = new SelectList(
-                await _context.Books.ToListAsync(),
-                "Id",
-                "Title",
-                Record.BookId
-            );
+            if (book.AvailableCopies <= 0)
+            {
+                TempData["Error"] = "❌ Book not available.";
+                return RedirectToAction(nameof(Issue));
+            }
 
-            var activeMembers = await _context.Members
-                .Where(m => _context.Memberships.Any(ms =>
-                    ms.MemberId == m.Id &&
-                    ms.IsActive &&
-                    ms.EndDate > DateTime.Now))
-                .ToListAsync();
+            if (borrowDays <= 0)
+            {
+                TempData["Error"] = "Invalid borrow duration.";
+                return RedirectToAction(nameof(Issue));
+            }
 
-            ViewBag.Members = new SelectList(
-                activeMembers,
-                "Id",
-                "Name",
-                Record.MemberId
-            );
+            Record.IssuedOn = DateTime.Now;
+            Record.DueDate = DateTime.Now.AddDays(borrowDays);
+            Record.Status = "Issued";
 
-            return View(Record);
+            Record.FinePerDay = 10;
+            Record.FineAmount = 0;
+            Record.DaysLate = 0;
+
+            book.AvailableCopies--;
+
+            _context.BorrowRecords.Add(Record);
+            _context.Books.Update(book);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "✅ Book issued successfully!";
+            return RedirectToAction(nameof(Index));
         }
 
         // ================= RETURN GET =================
@@ -171,13 +123,9 @@ namespace LibraryManagementSystem.Controllers
                 return NotFound();
 
             // FINE CALCULATION
-            if (record.ReturnedOn == null &&
-                DateTime.Now > record.DueDate)
+            if (record.ReturnedOn == null && DateTime.Now > record.DueDate)
             {
-                var daysLate =
-                    (DateTime.Now - record.DueDate).Days;
-
-                record.FineAmount = daysLate * 10;
+                CalculateFine(record);
             }
 
             return View(record);
@@ -198,13 +146,19 @@ namespace LibraryManagementSystem.Controllers
             // RETURN DATE
             record.ReturnedOn = DateTime.Now;
 
-            // FINE
+            // FINE CALCULATION
             if (record.ReturnedOn > record.DueDate)
             {
-                var daysLate =
+                record.DaysLate =
                     (record.ReturnedOn.Value - record.DueDate).Days;
 
-                record.FineAmount = daysLate * 10;
+                record.FineAmount =
+                    record.DaysLate * record.FinePerDay;
+            }
+            else
+            {
+                record.DaysLate = 0;
+                record.FineAmount = 0;
             }
 
             record.Status = "Returned";
@@ -229,16 +183,136 @@ namespace LibraryManagementSystem.Controllers
         public async Task<IActionResult> History(int memberId)
         {
             var records = await _context.BorrowRecords
+                .AsNoTracking()
                 .Include(b => b.Book)
                 .Include(b => b.Member)
                 .Where(b => b.MemberId == memberId)
                 .OrderByDescending(b => b.IssuedOn)
                 .ToListAsync();
 
-            ViewBag.MemberName =
-                records.FirstOrDefault()?.Member?.Name;
+            foreach (var r in records)
+            {
+                CalculateFine(r);
+            }
+
+            ViewBag.MemberName = records.FirstOrDefault()?.Member?.Name;
 
             return View(records);
+        }
+
+        private void CalculateFine(BorrowRecord record)
+        {
+            if (record.FinePerDay == 0)
+            {
+                record.FinePerDay = 10;
+            }
+
+            DateTime endDate = record.ReturnedOn ?? DateTime.Now;
+
+            if (endDate > record.DueDate)
+            {
+                record.DaysLate = (endDate.Date - record.DueDate.Date).Days;
+                record.FineAmount = record.DaysLate * record.FinePerDay;
+            }
+            else
+            {
+                record.DaysLate = 0;
+                record.FineAmount = 0;
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMemberMembership(int memberId)
+        {
+            var membership = await _context.Memberships
+                .Where(m => m.MemberId == memberId && m.IsActive && m.EndDate > DateTime.Now)
+                .FirstOrDefaultAsync();
+
+            if (membership == null)
+                return Json(new { hasMembership = false });
+
+            return Json(new
+            {
+                hasMembership = true,
+                durationMonths = membership.DurationMonths,
+                endDate = membership.EndDate.ToString("yyyy-MM-dd")
+            });
+        }
+
+        public async Task<IActionResult> DownloadReceipt(int id)
+        {
+            var record = await _context.BorrowRecords
+                .Include(b => b.Book)
+                .Include(b => b.Member)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (record == null)
+                return NotFound();
+
+            var pdf = _pdfService.GenerateIssueReceipt(record);
+
+            return File(
+                pdf,
+                "application/pdf",
+                $"Receipt_{record.Id}.pdf"
+            );
+        }
+
+        public IActionResult ExportExcel()
+        {
+            var borrows = _context.BorrowRecords
+                .Include(b => b.Book)
+                .Include(b => b.Member)
+                .ToList();
+
+            var file = _exportService.ExportBorrows(borrows);
+
+            return File(file,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "BorrowRecords.xlsx");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Renew(int id)
+        {
+            var record = await _context.BorrowRecords
+                .Include(b => b.Book)
+                .Include(b => b.Member)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (record == null)
+                return NotFound();
+
+            if (record.Status == "Returned")
+            {
+                TempData["Error"] = "Book already returned.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (DateTime.Now.Date > record.DueDate.Date)
+            {
+                TempData["Error"] = "Cannot renew overdue book.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (record.RenewCount >= 2)
+            {
+                TempData["Error"] = "Maximum renew limit reached.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            record.DueDate = record.DueDate.AddDays(7);
+
+            record.RenewCount++;
+
+            _context.Update(record);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Book renewed successfully for 7 days.";
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

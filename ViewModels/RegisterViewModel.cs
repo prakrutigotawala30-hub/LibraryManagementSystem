@@ -19,5 +19,8 @@ namespace LibraryManagementSystem.ViewModels
         [DataType(DataType.Password)]
         [Compare("Password")]
         public string ConfirmPassword { get; set; }
+
+        public bool IsAdmin { get; set; }
+        public string? PrivateKey { get; set; }
     }
 }

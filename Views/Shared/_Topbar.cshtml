@@ -1,0 +1,123 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<LibraryManagementSystem.Models.ApplicationUser> UserManager
+
+@{
+    var user = await UserManager.GetUserAsync(User);
+}
+
+<div class="topbar">
+
+    <!-- LEFT -->
+    <div class="d-flex align-items-center gap-3">
+
+        <!-- SIDEBAR TOGGLE -->
+        <button class="btn btn-light border-0 shadow-sm" id="toggleSidebar">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+
+        <!-- SEARCH -->
+        <div class="search-box-global">
+
+            <i class="bi bi-search"></i>
+
+            <input type="text"
+                   id="globalSearch"
+                   class="form-control"
+                   placeholder="Search anything in website..." />
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="d-flex align-items-center gap-3">
+
+        <!-- NOTIFICATION -->
+        <div class="notification-bell position-relative">
+            <i class="bi bi-bell"></i>
+            <span class="notification-count">3</span>
+        </div>
+
+        <!-- DARK MODE TOGGLE -->
+        <button class="theme-toggle-btn" id="themeToggle">
+            <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+        </button>
+
+        <!-- CONTACT BUTTON -->
+        <a asp-controller="Home" asp-action="Contact"
+           class="contact-btn text-decoration-none">
+            <i class="bi bi-telephone-fill"></i>
+            <span>Contact Us</span>
+        </a>
+
+        <!-- USER DROPDOWN -->
+        <div class="user-box dropdown">
+
+            <a class="dropdown-toggle text-decoration-none d-flex align-items-center gap-2"
+               href="#"
+               role="button"
+               data-bs-toggle="dropdown"
+               aria-expanded="false">
+
+                <!-- AVATAR -->
+                <div class="user-avatar">
+                    @(user?.FullName?.Substring(0, 1).ToUpper() ?? "A")
+                </div>
+
+                <!-- NAME -->
+                <div class="d-none d-md-block">
+
+                    <div class="fw-semibold admin-name">
+                        @(user?.FullName ?? user?.Email)
+                    </div>
+
+                    <small class="text-muted">
+                        Administrator
+                    </small>
+
+                </div>
+
+            </a>
+
+            <!-- DROPDOWN MENU -->
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+
+                <li>
+                    <a class="dropdown-item"
+                       asp-controller="Home"
+                       asp-action="Index">
+
+                        <i class="bi bi-speedometer2 me-2"></i>
+                        Dashboard
+                    </a>
+                </li>
+
+                <li>
+                    <a class="dropdown-item"
+                       asp-controller="Home"
+                       asp-action="Privacy">
+
+                        <i class="bi bi-gear me-2"></i>
+                        Settings
+                    </a>
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li>
+                    <a class="dropdown-item text-danger"
+                       asp-controller="Account"
+                       asp-action="Logout">
+
+                        <i class="bi bi-box-arrow-right me-2"></i>
+                        Logout
+                    </a>
+                </li>
+
+            </ul>
+
+        </div>
+
+    </div>
+
+</div>

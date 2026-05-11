@@ -131,10 +131,16 @@ namespace LibraryManagementSystem.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ISBN")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -150,6 +156,8 @@ namespace LibraryManagementSystem.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.ToTable("Books");
                 });
 
@@ -164,16 +172,25 @@ namespace LibraryManagementSystem.Migrations
                     b.Property<int>("BookId")
                         .HasColumnType("int");
 
+                    b.Property<int>("DaysLate")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("FineAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("FinePerDay")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("IssuedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("MemberId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RenewCount")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("ReturnedOn")
@@ -213,6 +230,27 @@ namespace LibraryManagementSystem.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("LibraryManagementSystem.Models.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("LibraryManagementSystem.Models.Member", b =>
@@ -434,9 +472,15 @@ namespace LibraryManagementSystem.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LibraryManagementSystem.Models.Department", "Department")
+                        .WithMany("Books")
+                        .HasForeignKey("DepartmentId");
+
                     b.Navigation("Author");
 
                     b.Navigation("Category");
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("LibraryManagementSystem.Models.BorrowRecord", b =>
@@ -542,6 +586,11 @@ namespace LibraryManagementSystem.Migrations
                 });
 
             modelBuilder.Entity("LibraryManagementSystem.Models.Category", b =>
+                {
+                    b.Navigation("Books");
+                });
+
+            modelBuilder.Entity("LibraryManagementSystem.Models.Department", b =>
                 {
                     b.Navigation("Books");
                 });

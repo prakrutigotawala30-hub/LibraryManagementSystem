@@ -16,16 +16,18 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // OVERDUE BOOKS REPORT
-        public async Task<IActionResult> Overdue()
+        public async Task<IActionResult> OverdueBooks()
         {
-            var overdueList = await _context.BorrowRecords
+            var overdueBooks = await _context.BorrowRecords
                 .Include(b => b.Book)
                 .Include(b => b.Member)
-                .Where(b => b.ReturnedOn == null && b.DueDate < DateTime.Now)
-                .OrderByDescending(b => b.DueDate)
+                .Where(b =>
+                    b.Status == "Issued" &&
+                    b.DueDate < DateTime.Now)
+                .OrderBy(b => b.DueDate)
                 .ToListAsync();
 
-            return View(overdueList);
+            return View(overdueBooks);
         }
 
         // TOP BORROWERS REPORT

@@ -233,6 +233,138 @@
 
     </div>
 
+    <!-- QUICK ACTIONS -->
+
+    <div class="card border-0 shadow-sm mt-5 quick-action-card">
+
+        <div class="card-body p-4">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+                    <h4 class="fw-bold mb-1">
+                        ⚡ Quick Actions
+                    </h4>
+
+                    <p class="text-muted mb-0">
+                        Frequently used library operations
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="row g-4">
+
+                <!-- ISSUE BOOK -->
+
+                <div class="col-lg-3 col-md-6">
+
+                    <a asp-controller="Borrow"
+                       asp-action="Issue"
+                       class="text-decoration-none">
+
+                        <div class="quick-box issue-box">
+
+                            <div class="quick-icon">
+                                <i class="bi bi-journal-plus"></i>
+                            </div>
+
+                            <h5>Issue Book</h5>
+
+                            <p>
+                                Borrow books for members
+                            </p>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+                <!-- ADD MEMBER -->
+
+                <div class="col-lg-3 col-md-6">
+
+                    <a asp-controller="Members"
+                       asp-action="Create"
+                       class="text-decoration-none">
+
+                        <div class="quick-box member-box">
+
+                            <div class="quick-icon">
+                                <i class="bi bi-person-plus"></i>
+                            </div>
+
+                            <h5>Add Member</h5>
+
+                            <p>
+                                Register new library member
+                            </p>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+                <!-- ADD BOOK -->
+
+                <div class="col-lg-3 col-md-6">
+
+                    <a asp-controller="Books"
+                       asp-action="Create"
+                       class="text-decoration-none">
+
+                        <div class="quick-box book-box">
+
+                            <div class="quick-icon">
+                                <i class="bi bi-book-half"></i>
+                            </div>
+
+                            <h5>Add Book</h5>
+
+                            <p>
+                                Add new books to library
+                            </p>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+                <!-- MEMBERSHIPS -->
+
+                <div class="col-lg-3 col-md-6">
+
+                    <a asp-controller="Membership"
+                       asp-action="Create"
+                       class="text-decoration-none">
+
+                        <div class="quick-box membership-box">
+
+                            <div class="quick-icon">
+                                <i class="bi bi-patch-check"></i>
+                            </div>
+
+                            <h5>Membership</h5>
+
+                            <p>
+                                Create member subscription
+                            </p>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
     <!-- RECENT BORROWS -->
     <div class="card border-0 shadow-sm mt-5">
 
@@ -331,7 +463,233 @@
 
     </div>
 
+    <!-- FEATURED BOOKS -->
+    <div class="card border-0 shadow-sm mt-5">
+
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">⭐ Editor's Pick Books</h5>
+        </div>
+
+        <div class="card-body">
+
+            @if (ViewBag.FeaturedBooks != null &&
+                        ((List<LibraryManagementSystem.Models.Book>)ViewBag.FeaturedBooks).Any())
+            {
+                <div class="row">
+
+                    @foreach (var book in (List<LibraryManagementSystem.Models.Book>)ViewBag.FeaturedBooks)
+                    {
+                        <div class="col-md-4 mb-3">
+
+                            <div class="card h-100 border-0 shadow-sm">
+
+                                <div class="card-body">
+
+                                    <h5 class="fw-bold text-primary">
+                                        @book.Title
+                                    </h5>
+
+                                    <p class="mb-1">
+                                        <strong>ISBN:</strong> @book.ISBN
+                                    </p>
+
+                                    <p class="mb-1">
+                                        <strong>Available:</strong>
+                                        @book.AvailableCopies / @book.TotalCopies
+                                    </p>
+
+                                    <span class="badge bg-warning text-dark mt-2">
+                                        Editor's Pick
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">
+                    No featured books available.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    @* ======= CHARTS ======= *@
+    <div class="container-fluid mt-4">
+
+        <div class="row g-4">
+
+            <!-- LINE CHART -->
+            <div class="col-lg-6">
+
+                <div class="card dashboard-card p-4">
+
+                    <h5 class="chart-title">
+                        📈 Borrows Over Time
+                    </h5>
+
+                    <canvas id="borrowChart"></canvas>
+
+                </div>
+
+            </div>
+
+            <!-- DONUT CHART -->
+            <div class="col-lg-6">
+
+                <div class="card dashboard-card p-4">
+
+                    <h5 class="chart-title">
+                        🍩 Books By Category
+                    </h5>
+
+                    <canvas id="categoryChart"></canvas>
+
+                </div>
+
+            </div>
+
+            <!-- BAR CHART -->
+            <div class="col-lg-12">
+
+                <div class="card dashboard-card p-4">
+
+                    <h5 class="chart-title">
+                        📊 Monthly Fine Collection
+                    </h5>
+
+                    <canvas id="fineChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <partial name="_ActivityFeed"
+             model="(List<LibraryManagementSystem.Models.BorrowRecord>)ViewBag.RecentBorrows" />
+
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    // DATA FROM DATABASE
+
+    const borrowLabels =
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.BorrowLabels));
+
+    const borrowData =
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.BorrowData));
+
+    const categoryLabels =
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CategoryLabels));
+
+    const categoryData =
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CategoryData));
+
+    const fineLabels =
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.FineLabels));
+
+    const fineData =
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.FineData));
+
+    // BORROW CHART
+
+    new Chart(document.getElementById('borrowChart'), {
+
+        type: 'line',
+
+        data: {
+
+            labels: borrowLabels,
+
+            datasets: [{
+
+                label: 'Books Borrowed',
+
+                data: borrowData,
+
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true
+
+        }
+
+    });
+
+    // CATEGORY CHART
+
+    new Chart(document.getElementById('categoryChart'), {
+
+        type: 'doughnut',
+
+        data: {
+
+            labels: categoryLabels,
+
+            datasets: [{
+
+                data: categoryData
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true
+
+        }
+
+    });
+
+    // FINE CHART
+
+    new Chart(document.getElementById('fineChart'), {
+
+        type: 'bar',
+
+        data: {
+
+            labels: fineLabels,
+
+            datasets: [{
+
+                label: 'Fine Collection ₹',
+
+                data: fineData
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true
+
+        }
+
+    });
+
+</script>
 
 <style>
 
@@ -362,12 +720,26 @@
     }
 
     .membership-active {
-        background: linear-gradient(135deg,#0891b2,#06b6d4);
+        background: linear-gradient(135deg,#0891b2,#06b6d4) !important;
+        color: #ffffff !important;
     }
 
+        .membership-active p,
+        .membership-active h2,
+        .membership-active i {
+            color: #ffffff !important;
+        }
+
     .membership-expired {
-        background: linear-gradient(135deg,#6b7280,#4b5563);
+        background: linear-gradient(135deg,#6b7280,#4b5563) !important;
+        color: #ffffff !important;
     }
+
+        .membership-expired p,
+        .membership-expired h2,
+        .membership-expired i {
+            color: #ffffff !important;
+        }
 
     .membership-banner {
         border-radius: 24px;
@@ -400,6 +772,146 @@
     .table {
         border-radius: 12px;
         overflow: hidden;
+    }
+
+    .dashboard-card {
+        border: none;
+        border-radius: 22px;
+        background: var(--bs-body-bg);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .chart-title {
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    /* DARK MODE SUPPORT */
+
+    [data-bs-theme="dark"] .dashboard-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+    }
+
+    canvas {
+        width: 100% !important;
+        max-height: 320px;
+    }
+    /* QUICK ACTION PANEL */
+
+    .quick-action-card {
+        border-radius: 24px;
+        background: #ffffff;
+        transition: 0.3s ease;
+    }
+
+    .quick-box {
+        border-radius: 20px;
+        padding: 30px 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        color: white;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .quick-box::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.05);
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .quick-box:hover::before {
+            opacity: 1;
+        }
+
+        .quick-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.18);
+        }
+
+    .quick-icon {
+        width: 70px;
+        height: 70px;
+        margin: auto;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        margin-bottom: 18px;
+        backdrop-filter: blur(8px);
+    }
+
+    .issue-box {
+        background: linear-gradient(135deg,#2563eb,#3b82f6);
+    }
+
+    .member-box {
+        background: linear-gradient(135deg,#059669,#10b981);
+    }
+
+    .book-box {
+        background: linear-gradient(135deg,#ea580c,#f97316);
+    }
+
+    .membership-box {
+        background: linear-gradient(135deg,#7c3aed,#8b5cf6);
+    }
+
+    .quick-box h5 {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: white;
+    }
+
+    .quick-box p {
+        margin-bottom: 0;
+        opacity: 0.95;
+        font-size: 14px;
+        color: rgba(255,255,255,0.9);
+    }
+
+
+    /* =========================
+       DARK MODE SUPPORT
+    ========================= */
+
+    [data-bs-theme="dark"] .quick-action-card {
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    [data-bs-theme="dark"] .quick-box {
+        box-shadow: none;
+    }
+
+        [data-bs-theme="dark"] .quick-box:hover {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.45);
+        }
+
+    [data-bs-theme="dark"] .quick-icon {
+        background: rgba(255,255,255,0.12);
+    }
+
+    [data-bs-theme="dark"] .quick-box p {
+        color: rgba(255,255,255,0.82);
+    }
+
+
+    /* =========================
+       LIGHT MODE HOVER EFFECT
+    ========================= */
+
+    [data-bs-theme="light"] .quick-action-card,
+    body:not([data-bs-theme="dark"]) .quick-action-card {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
 
 </style>
